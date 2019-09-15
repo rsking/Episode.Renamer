@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "Rename Shows - Windows": {
+      "commandName": "Project",
+      "commandLineArgs": "\"D:\\Videos\\download\" E:\\Videos --dry-run"
+    },
+    "Rename Movies - Windows": {
+      "commandName": "Project",
+      "commandLineArgs": "\"D:\\Videos\\Movies\" D:\\Videos"
+    },
+    "Rename iTunes - Windows": {
+      "commandName": "Project",
+      "commandLineArgs": "\"D:\\Users\\rskin\\OneDrive\\Music\\iTunes\\iTunes Media\\TV Shows\" E:\\Videos"
+    }
+  }
+}
