@@ -57,7 +57,7 @@
             return false;
         }
 
-        public static string ReplaceAll(this string stringValue, char[] oldValues, char newValue)
+        public static string ReplaceAll(this string stringValue, char[] oldValues, char newValue = '_')
         {
             foreach (var oldValue in oldValues)
             {
