@@ -34,18 +34,14 @@
 
         private static Task<int> Main(string[] args)
         {
-            var host = new Microsoft.Extensions.Hosting.HostBuilder().ConfigureServices((_, services) =>
-            {
-                var serilogLogger = new LoggerConfiguration()
-                    .WriteTo.ColoredConsole().MinimumLevel.Information()
-                    .CreateLogger();
-                services.AddLogging(c => c.AddSerilog(serilogLogger, true));
-            }).Build();
+            var host = new Microsoft.Extensions.Hosting.HostBuilder()
+                .UseSerilog(new LoggerConfiguration().WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture).MinimumLevel.Information().CreateLogger())
+                .Build();
 
             var root = new RootCommand();
             root.AddArgument(new Argument<System.IO.DirectoryInfo>("source"));
             root.AddArgument(new Argument<System.IO.DirectoryInfo>("destination"));
-            root.AddOption(new Option(new[] { "-m", "--move" }, "Moves the files") { Argument = new Argument<bool>("move") });
+            root.AddOption(new Option(new[] { "-m", "--move" }, "Moves the files"));
             root.AddOption(new Option(new[] { "-n", "--dry-run" }, "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command."));
 
             root.Handler = CommandHandler.Create((System.IO.DirectoryInfo source, System.IO.DirectoryInfo destination, bool move, bool dryRun) =>
