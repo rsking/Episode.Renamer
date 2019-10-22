@@ -2,6 +2,7 @@
 {
     using System.CommandLine;
     using System.CommandLine.Invocation;
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
@@ -35,7 +36,10 @@
         private static Task<int> Main(string[] args)
         {
             var host = new Microsoft.Extensions.Hosting.HostBuilder()
-                .UseSerilog(new LoggerConfiguration().WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture).MinimumLevel.Information().CreateLogger())
+                .UseSerilog(new LoggerConfiguration()
+                    .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
+                    .MinimumLevel.Information()
+                    .CreateLogger())
                 .Build();
 
             var root = new RootCommand();
@@ -48,7 +52,7 @@
             {
                 // search for all files in the source directory
                 var programLogger = host.Services.GetRequiredService<ILogger<Program>>();
-
+                
                 foreach (var file in source.EnumerateFiles("*.*", new System.IO.EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = System.IO.FileAttributes.Hidden }))
                 {
                     if (file.Length == 0)
@@ -139,7 +143,7 @@
                 }
             });
 
-            return root.InvokeAsync(args);
+            return root.InvokeAsync(args.Select(arg => System.Environment.ExpandEnvironmentVariables(arg)).ToArray());
         }
     }
 }
