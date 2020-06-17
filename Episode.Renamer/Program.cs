@@ -111,7 +111,7 @@ namespace Episode.Renamer
                     {
                         if (path.Exists)
                         {
-                            // see if this is the name size
+                            // see if this is the same size
                             if (path.Length == file.Length)
                             {
                                 programLogger.LogDebug("{Source} has the same length as {Destination}", file.FullName, path.FullName);
