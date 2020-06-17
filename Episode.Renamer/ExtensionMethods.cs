@@ -67,14 +67,12 @@
             return stringValue;
         }
 
-#if !NETCOREAPP3_0
+#if !NETCOREAPP
         public static void MoveTo(this System.IO.FileInfo fileInfo, string destFileName, bool overwrite)
         {
             if (overwrite)
             {
-                var tempFileName = System.IO.Path.GetTempFileName();
                 fileInfo.Replace(destFileName, null);
-                System.IO.File.Delete(tempFileName);
             }
             else
             {
