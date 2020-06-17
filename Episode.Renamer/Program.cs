@@ -1,4 +1,4 @@
-﻿namespace Episode.Renamer
+namespace Episode.Renamer
 {
     using System.CommandLine;
     using System.CommandLine.Invocation;
@@ -35,7 +35,8 @@
 
         private static Task<int> Main(string[] args)
         {
-            var host = new Microsoft.Extensions.Hosting.HostBuilder()
+            var host = Microsoft.Extensions.Hosting.Host
+                .CreateDefaultBuilder()
                 .UseSerilog(new LoggerConfiguration()
                     .WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture)
                     .MinimumLevel.Information()
