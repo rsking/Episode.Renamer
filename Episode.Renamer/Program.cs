@@ -1,4 +1,4 @@
-namespace Episode.Renamer
+﻿namespace Episode.Renamer
 {
     using System.CommandLine;
     using System.CommandLine.Invocation;
@@ -129,7 +129,11 @@ namespace Episode.Renamer
                             programLogger.LogInformation("Moving {Source} to {Destination}", file.FullName, path.FullName);
                             if (!dryRun)
                             {
-                                file.MoveTo(path.FullName, true);
+                                file.CopyTo(path.FullName, true);
+                                if (file.Exists)
+                                {
+                                    file.Delete();
+                                }
                             }
                         }
                         else
