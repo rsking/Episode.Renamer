@@ -1,4 +1,10 @@
-﻿namespace Episode.Renamer
+﻿//-----------------------------------------------------------------------
+// <copyright file="Program.cs" company="RossKing">
+// Copyright (c) RossKing. All rights reserved.
+// </copyright>
+//-----------------------------------------------------------------------
+
+namespace Episode.Renamer
 {
     using System.CommandLine;
     using System.CommandLine.Builder;
@@ -13,6 +19,9 @@
     using Serilog;
     using TagLib;
 
+    /// <summary>
+    /// The main program.
+    /// </summary>
     internal class Program
     {
         private static readonly ReadOnlyByteVector EpisodeNumber = "tves";
@@ -25,16 +34,16 @@
             (char)1, (char)2, (char)3, (char)4, (char)5, (char)6, (char)7, (char)8, (char)9, (char)10,
             (char)11, (char)12, (char)13, (char)14, (char)15, (char)16, (char)17, (char)18, (char)19, (char)20,
             (char)21, (char)22, (char)23, (char)24, (char)25, (char)26, (char)27, (char)28, (char)29, (char)30,
-            (char)31, ':', '*', '?', '\\', '/'
+            (char)31, ':', '*', '?', '\\', '/',
         };
- 
+
         private static char[] GetInvalidPathChars() => new char[]
         {
-            '|', '\0',
+            '\"', '<', '>', '|', '\0',
             (char)1, (char)2, (char)3, (char)4, (char)5, (char)6, (char)7, (char)8, (char)9, (char)10,
             (char)11, (char)12, (char)13, (char)14, (char)15, (char)16, (char)17, (char)18, (char)19, (char)20,
             (char)21, (char)22, (char)23, (char)24, (char)25, (char)26, (char)27, (char)28, (char)29, (char)30,
-            (char)31
+            (char)31, ':', '*', '?',
         };
 
         private static Task<int> Main(string[] args)
@@ -73,7 +82,7 @@
             {
                 // search for all files in the source directory
                 var programLogger = host.Services.GetRequiredService<ILogger<Program>>();
-                
+
                 foreach (var file in source.EnumerateFiles("*.*", new System.IO.EnumerationOptions { RecurseSubdirectories = recursive, IgnoreInaccessible = true, AttributesToSkip = System.IO.FileAttributes.Hidden }))
                 {
                     if (file.Length == 0)
@@ -105,7 +114,7 @@
                                 var episodeNumber = appleTag.GetUInt32(EpisodeNumber);
                                 var episodeName = appleTag.Title;
 
-                                var directory = inplace 
+                                var directory = inplace
                                     ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
                                     : System.IO.Path.Combine(destination.FullName, "TV Shows", showName, $"Season {seasonNumber:00}").ReplaceAll(GetInvalidPathChars());
                                 var fileName = $"{showName} - s{seasonNumber:00}e{episodeNumber:00} - {episodeName}{file.Extension}".ReplaceAll(GetInvalidFileNameChars());

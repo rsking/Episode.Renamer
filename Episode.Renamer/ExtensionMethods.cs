@@ -1,9 +1,24 @@
-﻿namespace Episode.Renamer
+﻿//-----------------------------------------------------------------------
+// <copyright file="ExtensionMethods.cs" company="RossKing">
+// Copyright (c) RossKing. All rights reserved.
+// </copyright>
+//-----------------------------------------------------------------------
+
+namespace Episode.Renamer
 {
+    /// <summary>
+    /// Extension methods.
+    /// </summary>
     internal static class ExtensionMethods
     {
         private static readonly TagLib.ReadOnlyByteVector StikAtom = "stik";
 
+        /// <summary>
+        /// Gets the <see cref="uint" /> from the <see cref="TagLib.Mpeg4.AppleTag" /> using the specified type.
+        /// </summary>
+        /// <param name="appleTag">The apple tag.</param>
+        /// <param name="type">The type.</param>
+        /// <returns>The value.</returns>
         public static uint GetUInt32(this TagLib.Mpeg4.AppleTag appleTag, TagLib.ReadOnlyByteVector type)
         {
             foreach (var item in appleTag.DataBoxes(type))
@@ -31,6 +46,11 @@
             return 0u;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="TagLib.Mpeg4.AppleTag" /> represents a movie.
+        /// </summary>
+        /// <param name="appleTag">The apple tag.</param>
+        /// <returns><see langword="true" /> if <paramref name="appleTag"/> represents a movie.</returns>
         public static bool IsMovie(this TagLib.Mpeg4.AppleTag appleTag)
         {
             foreach (var item in appleTag.DataBoxes(StikAtom))
@@ -44,6 +64,11 @@
             return false;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="TagLib.Mpeg4.AppleTag" /> represents a TV show.
+        /// </summary>
+        /// <param name="appleTag">The apple tag.</param>
+        /// <returns><see langword="true" /> if <paramref name="appleTag"/> represents a TV show.</returns>
         public static bool IsTvShow(this TagLib.Mpeg4.AppleTag appleTag)
         {
             foreach (var item in appleTag.DataBoxes(StikAtom))
@@ -57,6 +82,13 @@
             return false;
         }
 
+        /// <summary>
+        /// Replaces all instances of <paramref name="oldValues" /> with <paramref name="newValue" />.
+        /// </summary>
+        /// <param name="stringValue">The string value.</param>
+        /// <param name="oldValues">The old values.</param>
+        /// <param name="newValue">The new value.</param>
+        /// <returns><paramref name="stringValue"/> with all instances of <paramref name="oldValues" /> with <paramref name="newValue" />.</returns>
         public static string ReplaceAll(this string stringValue, char[] oldValues, char newValue = '_')
         {
             foreach (var oldValue in oldValues)
