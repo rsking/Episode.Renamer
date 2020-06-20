@@ -2,7 +2,7 @@
   "profiles": {
     "Rename Shows - Windows": {
       "commandName": "Project",
-      "commandLineArgs": "\"D:\\Videos\\download\" E:\\Videos --dry-run"
+      "commandLineArgs": "\"D:\\Videos\\download\" %USERPROFILE%\\Videos --dry-run"
     },
     "Rename Movies - Windows": {
       "commandName": "Project",
