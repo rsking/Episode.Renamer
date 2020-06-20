@@ -8,6 +8,7 @@
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
     using Serilog;
     using TagLib;
@@ -40,7 +41,7 @@
         {
             return BuildCommandLine()
                 .UseHost(
-                    _ => Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(),
+                    _ => Host.CreateDefaultBuilder().UseContentRoot(System.AppDomain.CurrentDomain.BaseDirectory),
                     host => host.UseSerilog((hostBuilderContext, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration)))
                 .UseDefaults()
                 .Build()
@@ -56,13 +57,13 @@
                 root.AddOption(new Option<bool>(new[] { "-n", "--dry-run" }, "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command."));
                 root.AddOption(new Option<bool>(new[] { "-i", "--inplace" }, "Renames the files in place, rather than to <DESTINATION>."));
 
-                root.Handler = CommandHandler.Create<Microsoft.Extensions.Hosting.IHost, System.IO.DirectoryInfo, System.IO.DirectoryInfo, bool, bool, bool, bool>(Process);
+                root.Handler = CommandHandler.Create<IHost, System.IO.DirectoryInfo, System.IO.DirectoryInfo, bool, bool, bool, bool>(Process);
 
                 return new CommandLineBuilder(root);
             }
 
             static void Process(
-                Microsoft.Extensions.Hosting.IHost host,
+                IHost host,
                 System.IO.DirectoryInfo source,
                 System.IO.DirectoryInfo destination,
                 bool move = false,
