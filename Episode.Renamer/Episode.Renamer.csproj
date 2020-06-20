@@ -9,8 +9,8 @@
 
   <ItemGroup>
     <AdditionalFiles Include="$([MSBuild]::GetPathOfFileAbove(stylecop.json))" />
-    <Content Include="../appsettings*.json" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" CopyToPublishDirectory="PreserveNewest" />
-    <Content Update="../appsettings.*.json" DependentUpon="appsettings.json" />
+    <Content Include="appsettings*.json" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" CopyToPublishDirectory="PreserveNewest" />
+    <Content Update="appsettings.*.json" DependentUpon="appsettings.json" />
   </ItemGroup>
 
   <ItemGroup>
