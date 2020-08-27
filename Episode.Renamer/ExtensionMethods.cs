@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // <copyright file="ExtensionMethods.cs" company="RossKing">
 // Copyright (c) RossKing. All rights reserved.
 // </copyright>
@@ -80,6 +80,26 @@ namespace Episode.Renamer
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Trties to gets a string from the specified type.
+        /// </summary>
+        /// <param name="appleTag">The apple tag.</param>
+        /// <param name="type">The meta data type.</param>
+        /// <param name="value">The string value, if successful.</param>
+        /// <returns><see langword="true" /> if <paramref name="appleTag"/> contains <paramref name="type"/>; otherwise <see langword="false"/>.</returns>
+        public static bool TryGetString(this TagLib.Mpeg4.AppleTag appleTag, TagLib.ReadOnlyByteVector type, out string value)
+        {
+            var text = appleTag.GetText(type);
+            if (text is null || text.Length == 0)
+            {
+                value = default;
+                return false;
+            }
+
+            value = text[0];
+            return true;
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
 // <copyright file="Program.cs" company="RossKing">
 // Copyright (c) RossKing. All rights reserved.
 // </copyright>
@@ -27,6 +27,7 @@ namespace Episode.Renamer
         private static readonly ReadOnlyByteVector EpisodeNumber = "tves";
         private static readonly ReadOnlyByteVector ShowName = "tvsh";
         private static readonly ReadOnlyByteVector SeasonNumber = "tvsn";
+        private static readonly ReadOnlyByteVector Work = new ReadOnlyByteVector(new byte[] { 169, 119, 114, 107 }, 4);
 
         private static char[] GetInvalidFileNameChars() => new char[]
         {
@@ -104,7 +105,20 @@ namespace Episode.Renamer
                                 var directory = inplace
                                     ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
                                     : System.IO.Path.Combine(destination.FullName, "Movies").ReplaceAll(GetInvalidPathChars());
-                                var fileName = $"{appleTag.Title} ({appleTag.Year}){file.Extension}".ReplaceAll(GetInvalidFileNameChars());
+
+                                var fileNameWithoutExtension = $"{appleTag.Title} ({appleTag.Year})";
+                                if (appleTag.TryGetString(Work, out var work))
+                                {
+                                    if (!inplace)
+                                    {
+                                        directory = System.IO.Path.Combine(directory, fileNameWithoutExtension);
+                                    }
+
+                                    fileNameWithoutExtension += " - ";
+                                    fileNameWithoutExtension += work;
+                                }
+
+                                var fileName = (fileNameWithoutExtension + file.Extension).ReplaceAll(GetInvalidFileNameChars());
                                 path = new System.IO.FileInfo(System.IO.Path.Combine(directory, fileName));
                             }
                             else if (appleTag.IsTvShow())
