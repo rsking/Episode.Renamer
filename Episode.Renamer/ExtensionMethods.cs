@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------
 // <copyright file="ExtensionMethods.cs" company="RossKing">
 // Copyright (c) RossKing. All rights reserved.
 // </copyright>
@@ -118,6 +118,15 @@ namespace Episode.Renamer
 
             return stringValue;
         }
+
+        /// <summary>
+        /// Sanitises the string, changing exotic characters, to common ones, such as smart quotes.
+        /// </summary>
+        /// <param name="stringValue">The string value.</param>
+        /// <returns>A sanitised version of <paramref name="stringValue"/>.</returns>
+        public static string Sanitise(this string stringValue) => stringValue
+            .Replace('’', '\'').Replace('‘', '\'') // single quotes
+            .Replace('“', '"').Replace('”', '"'); // double quotes
 
 #if !NETCOREAPP
         public static void MoveTo(this System.IO.FileInfo fileInfo, string destFileName, bool overwrite)

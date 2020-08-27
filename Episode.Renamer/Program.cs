@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------
+﻿//-----------------------------------------------------------------------
 // <copyright file="Program.cs" company="RossKing">
 // Copyright (c) RossKing. All rights reserved.
 // </copyright>
@@ -106,7 +106,7 @@ namespace Episode.Renamer
                                     ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
                                     : System.IO.Path.Combine(destination.FullName, "Movies").ReplaceAll(GetInvalidPathChars());
 
-                                var fileNameWithoutExtension = $"{appleTag.Title} ({appleTag.Year})";
+                                var fileNameWithoutExtension = $"{appleTag.Title.Sanitise()} ({appleTag.Year})";
                                 if (appleTag.TryGetString(Work, out var work))
                                 {
                                     if (!inplace)
@@ -123,10 +123,10 @@ namespace Episode.Renamer
                             }
                             else if (appleTag.IsTvShow())
                             {
-                                var showName = string.Join("; ", appleTag.GetText(ShowName));
+                                var showName = string.Join("; ", appleTag.GetText(ShowName)).Sanitise();
                                 var seasonNumber = appleTag.GetUInt32(SeasonNumber);
                                 var episodeNumber = appleTag.GetUInt32(EpisodeNumber);
-                                var episodeName = appleTag.Title;
+                                var episodeName = appleTag.Title.Sanitise();
 
                                 var directory = inplace
                                     ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
