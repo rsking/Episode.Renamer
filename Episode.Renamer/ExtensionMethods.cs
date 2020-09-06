@@ -11,6 +11,8 @@ namespace Episode.Renamer
     /// </summary>
     internal static class ExtensionMethods
     {
+        private const char ReplacementChar = '_';
+
         private static readonly TagLib.ReadOnlyByteVector StikAtom = "stik";
 
         /// <summary>
@@ -109,7 +111,7 @@ namespace Episode.Renamer
         /// <param name="oldValues">The old values.</param>
         /// <param name="newValue">The new value.</param>
         /// <returns><paramref name="stringValue"/> with all instances of <paramref name="oldValues" /> with <paramref name="newValue" />.</returns>
-        public static string ReplaceAll(this string stringValue, char[] oldValues, char newValue = '_')
+        public static string ReplaceAll(this string stringValue, char[] oldValues, char newValue = ReplacementChar)
         {
             foreach (var oldValue in oldValues)
             {
@@ -126,7 +128,8 @@ namespace Episode.Renamer
         /// <returns>A sanitised version of <paramref name="stringValue"/>.</returns>
         public static string Sanitise(this string stringValue) => stringValue
             .Replace('’', '\'').Replace('‘', '\'') // single quotes
-            .Replace('“', '"').Replace('”', '"'); // double quotes
+            .Replace('“', '"').Replace('”', '"') // double quotes
+            .Replace(System.IO.Path.DirectorySeparatorChar, ReplacementChar); // possible directory separators
 
 #if !NETCOREAPP
         public static void MoveTo(this System.IO.FileInfo fileInfo, string destFileName, bool overwrite)
