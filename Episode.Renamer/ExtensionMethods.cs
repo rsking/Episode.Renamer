@@ -49,6 +49,42 @@ namespace Episode.Renamer
         }
 
         /// <summary>
+        /// Tries to gets a <see cref="uint" /> from the <see cref="TagLib.Mpeg4.AppleTag" /> using the specified type.
+        /// </summary>
+        /// <param name="appleTag">The apple tag.</param>
+        /// <param name="type">The meta data type.</param>
+        /// <param name="value">The <see cref="uint" /> value, if successful.</param>
+        /// <returns><see langword="true" /> if <paramref name="appleTag"/> contains <paramref name="type"/>; otherwise <see langword="false"/>.</returns>
+        public static bool TryGetUInt32(this TagLib.Mpeg4.AppleTag appleTag, TagLib.ReadOnlyByteVector type, out uint value)
+        {
+            foreach (var item in appleTag.DataBoxes(type))
+            {
+                if (item.Data.Count == 4)
+                {
+                    byte[] data;
+                    if (System.BitConverter.IsLittleEndian)
+                    {
+                        data = new byte[item.Data.Count];
+                        data[0] = item.Data.Data[3];
+                        data[1] = item.Data.Data[2];
+                        data[2] = item.Data.Data[1];
+                        data[3] = item.Data.Data[0];
+                    }
+                    else
+                    {
+                        data = item.Data.Data;
+                    }
+
+                    value = System.BitConverter.ToUInt32(data);
+                    return true;
+                }
+            }
+
+            value = default;
+            return false;
+        }
+
+        /// <summary>
         /// Gets a value indicating whether this <see cref="TagLib.Mpeg4.AppleTag" /> represents a movie.
         /// </summary>
         /// <param name="appleTag">The apple tag.</param>
@@ -85,11 +121,11 @@ namespace Episode.Renamer
         }
 
         /// <summary>
-        /// Trties to gets a string from the specified type.
+        /// Tries to gets a <see cref="string" /> from the <see cref="TagLib.Mpeg4.AppleTag" /> using the specified type.
         /// </summary>
         /// <param name="appleTag">The apple tag.</param>
         /// <param name="type">The meta data type.</param>
-        /// <param name="value">The string value, if successful.</param>
+        /// <param name="value">The <see cref="string" /> value, if successful.</param>
         /// <returns><see langword="true" /> if <paramref name="appleTag"/> contains <paramref name="type"/>; otherwise <see langword="false"/>.</returns>
         public static bool TryGetString(this TagLib.Mpeg4.AppleTag appleTag, TagLib.ReadOnlyByteVector type, out string value)
         {
