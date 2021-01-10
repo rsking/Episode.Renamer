@@ -61,28 +61,33 @@ namespace Episode.Renamer
 
             static CommandLineBuilder BuildCommandLine()
             {
-                var root = new RootCommand();
-                root.AddArgument(new Argument<System.IO.DirectoryInfo>("source"));
-                root.AddArgument(new Argument<System.IO.DirectoryInfo>("destination"));
-                root.AddOption(new Option<bool>(new[] { "-m", "--move" }, "Moves the files"));
-                root.AddOption(new Option<bool>(new[] { "-r", "--recursive" }, "Recursively searches <SOURCE>"));
-                root.AddOption(new Option<bool>(new[] { "-n", "--dry-run" }, "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command."));
-                root.AddOption(new Option<bool>(new[] { "-i", "--inplace" }, "Renames the files in place, rather than to <DESTINATION>."));
+                var rootCommandBuilder = new CommandLineBuilder()
+                    .AddArgument(new Argument<System.IO.DirectoryInfo>("source"))
+                    .AddOption(new Option<System.IO.DirectoryInfo>(new[] { "--movies" }, "The destination folder for movies. If unset, defaults to \"--tv\"").ExistingOnly())
+                    .AddOption(new Option<System.IO.DirectoryInfo>(new[] { "--tv" }, "The destination folder for TV shows. If unset, defaults to \"--movies\"").ExistingOnly())
+                    .AddOption(new Option<bool>(new[] { "-m", "--move" }, "Moves the files"))
+                    .AddOption(new Option<bool>(new[] { "-r", "--recursive" }, "Recursively searches <SOURCE>"))
+                    .AddOption(new Option<bool>(new[] { "-n", "--dry-run" }, "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command."))
+                    .AddOption(new Option<bool>(new[] { "-i", "--inplace" }, "Renames the files in place, rather than to <DESTINATION>."));
 
-                root.Handler = CommandHandler.Create<IHost, System.IO.DirectoryInfo, System.IO.DirectoryInfo, bool, bool, bool, bool>(Process);
+                rootCommandBuilder.Command.Handler = CommandHandler.Create<IHost, System.IO.DirectoryInfo, System.IO.DirectoryInfo, System.IO.DirectoryInfo, bool, bool, bool, bool>(Process);
 
-                return new CommandLineBuilder(root);
+                return rootCommandBuilder;
             }
 
             static void Process(
                 IHost host,
                 System.IO.DirectoryInfo source,
-                System.IO.DirectoryInfo destination,
+                System.IO.DirectoryInfo movies,
+                System.IO.DirectoryInfo tv,
                 bool move = false,
                 bool recursive = false,
                 bool dryRun = false,
                 bool inplace = false)
             {
+                tv ??= movies;
+                movies ??= tv;
+
                 // search for all files in the source directory
                 var programLogger = host.Services.GetRequiredService<ILogger<Program>>();
 
@@ -106,7 +111,7 @@ namespace Episode.Renamer
                             {
                                 var directory = inplace
                                     ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
-                                    : System.IO.Path.Combine(destination.FullName, "Movies").ReplaceAll(GetInvalidPathChars());
+                                    : System.IO.Path.Combine(movies.FullName, "Movies").ReplaceAll(GetInvalidPathChars());
 
                                 var fileNameWithoutExtension = $"{appleTag.Title.Sanitise()} ({appleTag.Year})";
                                 if (appleTag.TryGetString(Work, out var work))
@@ -131,7 +136,7 @@ namespace Episode.Renamer
 
                                 var directory = inplace
                                     ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
-                                    : System.IO.Path.Combine(destination.FullName, "TV Shows", showName, $"Season {seasonNumber:00}").ReplaceAll(GetInvalidPathChars());
+                                    : System.IO.Path.Combine(tv.FullName, "TV Shows", showName, $"Season {seasonNumber:00}").ReplaceAll(GetInvalidPathChars());
                                 var fileNameWithoutExtension = $"{showName} - s{seasonNumber:00}e{episodeNumber:00}";
                                 if (appleTag.TryGetUInt32(ContentId, out var contentId) && contentId != default)
                                 {
