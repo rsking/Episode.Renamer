@@ -200,14 +200,18 @@ static void Process(
 
             if (move)
             {
-                programLogger.LogInformation("Moving {Source} to {Destination}", file.FullName, path.FullName);
-                if (!dryRun)
+                if (!path.Exists || inplace)
                 {
-                    if (!path.Exists || inplace)
+                    programLogger.LogInformation("Moving {Source} to {Destination}", file.FullName, path.FullName);
+                    if (!dryRun)
                     {
                         file.MoveTo(path.FullName);
                     }
-                    else
+                }
+                else
+                {
+                    programLogger.LogInformation("Replacing {Destination} with {Source} with a move", file.FullName, path.FullName);
+                    if (!dryRun)
                     {
                         file.CopyTo(path.FullName, true);
                         if (file.Exists)
@@ -219,7 +223,15 @@ static void Process(
             }
             else
             {
-                programLogger.LogInformation("Coping {Source} to {Destination}", file.FullName, path.FullName);
+                if (path.Exists)
+                {
+                    programLogger.LogInformation("Replacing {Destination} with {Source} by a copy", file.FullName, path.FullName);
+                }
+                else
+                {
+                    programLogger.LogInformation("Coping {Source} to {Destination}", file.FullName, path.FullName);
+                }
+
                 if (!dryRun)
                 {
                     file.CopyTo(path.FullName, true);
