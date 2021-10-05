@@ -10,7 +10,6 @@ using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Linq;
-using System.Threading.Tasks;
 using Episode.Renamer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -75,14 +74,13 @@ static void Process(
     ReadOnlyByteVector showNameByteVector = "tvsh";
     ReadOnlyByteVector seasonNumberByteVector = "tvsn";
     ReadOnlyByteVector workByteVector = new ReadOnlyByteVector(new byte[] { 169, 119, 114, 107 }, 4);
-
     ReadOnlyByteVector contentIdByteVector = "cnID";
 
     tv ??= movies;
     movies ??= tv;
 
     // search for all files in the source directory
-    var programLogger = host.Services.GetRequiredService<Microsoft.Extensions.Logging.ILogger<LoggerProgram>>();
+    var programLogger = host.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>().CreateLogger("Program");
 
     foreach (var file in source.EnumerateFiles("*.*", new System.IO.EnumerationOptions { RecurseSubdirectories = recursive, IgnoreInaccessible = true, AttributesToSkip = System.IO.FileAttributes.Hidden }))
     {
@@ -225,8 +223,4 @@ static void Process(
             }
         }
     }
-}
-
-class LoggerProgram
-{    
 }
