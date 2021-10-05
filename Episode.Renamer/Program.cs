@@ -112,8 +112,12 @@ static void Process(
                             directory = System.IO.Path.Combine(directory, fileNameWithoutExtension);
                         }
 
-                        fileNameWithoutExtension += " - ";
-                        fileNameWithoutExtension += work;
+                        work = work.Trim();
+                        if (work.Length != 0)
+                        {
+                            fileNameWithoutExtension += " - ";
+                            fileNameWithoutExtension += work;
+                        }
                     }
 
                     var fileName = (fileNameWithoutExtension + file.Extension).ReplaceAll(GetInvalidFileNameChars());
