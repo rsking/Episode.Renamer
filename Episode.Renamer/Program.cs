@@ -109,7 +109,7 @@ static void Process(
                     {
                         if (!inplace)
                         {
-                            directory = System.IO.Path.Combine(directory, fileNameWithoutExtension);
+                            directory = System.IO.Path.Combine(directory, fileNameWithoutExtension.ReplaceAll(GetInvalidPathChars()));
                         }
 
                         work = work.Trim();
