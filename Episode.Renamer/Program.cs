@@ -9,7 +9,6 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
-using System.Linq;
 using Episode.Renamer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,7 +39,7 @@ return await BuildCommandLine()
         args => Host.CreateDefaultBuilder(args).UseContentRoot(System.AppDomain.CurrentDomain.BaseDirectory),
         host => host
             .UseSerilog((hostBuilderContext, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration))
-            .ConfigureServices((builder, services) => services.Configure<InvocationLifetimeOptions>(options => options.SuppressStatusMessages = true)))
+            .ConfigureServices(services => services.Configure<InvocationLifetimeOptions>(options => options.SuppressStatusMessages = true)))
     .UseDefaults()
     .Build()
     .InvokeAsync(args.Select(arg => System.Environment.ExpandEnvironmentVariables(arg)).ToArray())
@@ -64,9 +63,9 @@ static CommandLineBuilder BuildCommandLine()
 
 static void Process(
     IHost host,
-    System.IO.DirectoryInfo source,
-    System.IO.DirectoryInfo movies,
-    System.IO.DirectoryInfo tv,
+    DirectoryInfo source,
+    DirectoryInfo movies,
+    DirectoryInfo tv,
     bool move = false,
     bool recursive = false,
     bool dryRun = false,
@@ -91,19 +90,19 @@ static void Process(
             continue;
         }
 
-        File tagLibFile = default;
-        System.IO.FileInfo path = default;
+        TagLib.File? tagLibFile = default;
+        FileInfo? path = default;
 
         try
         {
-            tagLibFile = File.Create(file.FullName);
+            tagLibFile = TagLib.File.Create(file.FullName);
 
             if (tagLibFile.GetTag(TagTypes.Apple) is TagLib.Mpeg4.AppleTag appleTag)
             {
                 if (appleTag.IsMovie())
                 {
                     var directory = inplace
-                        ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
+                        ? file.GetDirectoryName(GetInvalidPathChars())
                         : System.IO.Path.Combine(movies.FullName, "Movies").ReplaceAll(GetInvalidPathChars());
 
                     var fileNameWithoutExtension = $"{appleTag.Title.Sanitise()} ({appleTag.Year})";
@@ -123,7 +122,7 @@ static void Process(
                     }
 
                     var fileName = (fileNameWithoutExtension + file.Extension).ReplaceAll(GetInvalidFileNameChars());
-                    path = new System.IO.FileInfo(System.IO.Path.Combine(directory, fileName));
+                    path = new FileInfo(System.IO.Path.Combine(directory, fileName));
                 }
                 else if (appleTag.IsTvShow())
                 {
@@ -132,7 +131,7 @@ static void Process(
                     var episodeNumber = appleTag.GetUInt32(episodeNumberByteVector);
 
                     var directory = inplace
-                        ? file.DirectoryName.ReplaceAll(GetInvalidPathChars())
+                        ? file.GetDirectoryName(GetInvalidPathChars())
                         : System.IO.Path.Combine(tv.FullName, "TV Shows", showName, $"Season {seasonNumber:00}").ReplaceAll(GetInvalidPathChars());
                     var fileNameWithoutExtension = $"{showName} - s{seasonNumber:00}e{episodeNumber:00}";
                     if (appleTag.TryGetUInt32(contentIdByteVector, out var contentId) && contentId != default)
@@ -156,7 +155,7 @@ static void Process(
                     }
 
                     var fileName = (fileNameWithoutExtension + file.Extension).ReplaceAll(GetInvalidFileNameChars());
-                    path = new System.IO.FileInfo(System.IO.Path.Combine(directory, fileName));
+                    path = new FileInfo(System.IO.Path.Combine(directory, fileName));
                 }
                 else
                 {
@@ -168,7 +167,7 @@ static void Process(
                 programLogger.LogDebug("Found non 'Apple' format at {File}", file.Name);
             }
 
-            tagLibFile.Mode = File.AccessMode.Closed;
+            tagLibFile.Mode = TagLib.File.AccessMode.Closed;
         }
         catch (UnsupportedFormatException)
         {
@@ -185,17 +184,13 @@ static void Process(
 
         if (path != null)
         {
-            if (path.Exists)
+            if (path.Exists && path.Length == file.Length)
             {
-                // see if this is the same size
-                if (path.Length == file.Length)
-                {
-                    programLogger.LogDebug("{Source} has the same length as {Destination}", file.FullName, path.FullName);
-                    continue;
-                }
+                programLogger.LogDebug("{Source} has the same length as {Destination}", file.FullName, path.FullName);
+                continue;
             }
 
-            if (!dryRun)
+            if (!dryRun && path.Directory is not null)
             {
                 path.Directory.Create();
             }
