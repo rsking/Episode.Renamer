@@ -37,8 +37,10 @@ static char[] GetInvalidPathChars() => new char[]
 
 return await BuildCommandLine()
     .UseHost(
-        _ => Host.CreateDefaultBuilder().UseContentRoot(System.AppDomain.CurrentDomain.BaseDirectory),
-        host => host.UseSerilog((hostBuilderContext, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration)))
+        args => Host.CreateDefaultBuilder(args).UseContentRoot(System.AppDomain.CurrentDomain.BaseDirectory),
+        host => host
+            .UseSerilog((hostBuilderContext, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration))
+            .ConfigureServices((builder, services) => services.Configure<InvocationLifetimeOptions>(options => options.SuppressStatusMessages = true)))
     .UseDefaults()
     .Build()
     .InvokeAsync(args.Select(arg => System.Environment.ExpandEnvironmentVariables(arg)).ToArray())
@@ -70,11 +72,11 @@ static void Process(
     bool dryRun = false,
     bool inplace = false)
 {
-    ReadOnlyByteVector episodeNumberByteVector = "tves";
-    ReadOnlyByteVector showNameByteVector = "tvsh";
-    ReadOnlyByteVector seasonNumberByteVector = "tvsn";
-    ReadOnlyByteVector workByteVector = new ReadOnlyByteVector(new byte[] { 169, 119, 114, 107 }, 4);
-    ReadOnlyByteVector contentIdByteVector = "cnID";
+    var episodeNumberByteVector = (ReadOnlyByteVector)"tves";
+    var showNameByteVector = (ReadOnlyByteVector)"tvsh";
+    var seasonNumberByteVector = (ReadOnlyByteVector)"tvsn";
+    var workByteVector = new ReadOnlyByteVector(new byte[] { 169, 119, 114, 107 }, 4);
+    var contentIdByteVector = (ReadOnlyByteVector)"cnID";
 
     tv ??= movies;
     movies ??= tv;
@@ -210,7 +212,7 @@ static void Process(
                 }
                 else
                 {
-                    programLogger.LogInformation("Replacing {Destination} with {Source} with a move", file.FullName, path.FullName);
+                    programLogger.LogInformation("Replacing {Destination} with {Source} with a move", path.FullName, file.FullName);
                     if (!dryRun)
                     {
                         file.CopyTo(path.FullName, true);
@@ -225,7 +227,7 @@ static void Process(
             {
                 if (path.Exists)
                 {
-                    programLogger.LogInformation("Replacing {Destination} with {Source} by a copy", file.FullName, path.FullName);
+                    programLogger.LogInformation("Replacing {Destination} with {Source} by a copy", path.FullName, file.FullName);
                 }
                 else
                 {
