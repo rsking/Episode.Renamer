@@ -47,18 +47,37 @@ return await BuildCommandLine()
 
 static CommandLineBuilder BuildCommandLine()
 {
-    var rootCommandBuilder = new CommandLineBuilder()
-        .AddArgument(new Argument<System.IO.DirectoryInfo>("source"))
-        .AddOption(new Option<System.IO.DirectoryInfo>(new[] { "--movies" }, "The destination folder for movies. If unset, defaults to \"--tv\"").ExistingOnly())
-        .AddOption(new Option<System.IO.DirectoryInfo>(new[] { "--tv" }, "The destination folder for TV shows. If unset, defaults to \"--movies\"").ExistingOnly())
-        .AddOption(new Option<bool>(new[] { "-m", "--move" }, "Moves the files"))
-        .AddOption(new Option<bool>(new[] { "-r", "--recursive" }, "Recursively searches <SOURCE>"))
-        .AddOption(new Option<bool>(new[] { "-n", "--dry-run" }, "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command."))
-        .AddOption(new Option<bool>(new[] { "-i", "--inplace" }, "Renames the files in place, rather than to <DESTINATION>."));
+    var sourceArgument = new Argument<System.IO.DirectoryInfo>("source");
+    var moviesOption = new Option<System.IO.DirectoryInfo>(new[] { "--movies" }, "The destination folder for movies. If unset, defaults to \"--tv\"").ExistingOnly();
+    var tvOption = new Option<System.IO.DirectoryInfo>(new[] { "--tv" }, "The destination folder for TV shows. If unset, defaults to \"--movies\"").ExistingOnly();
+    var moveOption = new Option<bool>(new[] { "-m", "--move" }, "Moves the files");
+    var recursiveOption = new Option<bool>(new[] { "-r", "--recursive" }, "Recursively searches <SOURCE>");
+    var dryRunOption = new Option<bool>(new[] { "-n", "--dry-run" }, "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command.");
+    var inplaceOption = new Option<bool>(new[] { "-i", "--inplace" }, "Renames the files in place, rather than to <DESTINATION>.");
 
-    rootCommandBuilder.Command.Handler = CommandHandler.Create<IHost, System.IO.DirectoryInfo, System.IO.DirectoryInfo, System.IO.DirectoryInfo, bool, bool, bool, bool>(Process);
+    var rootCommand = new RootCommand
+    {
+        sourceArgument,
+        moviesOption,
+        tvOption,
+        moveOption,
+        recursiveOption,
+        dryRunOption,
+        inplaceOption,
+    };
 
-    return rootCommandBuilder;
+    rootCommand.SetHandler(
+        Process,
+        Bind.FromServiceProvider<IHost>(),
+        sourceArgument,
+        moviesOption,
+        tvOption,
+        moveOption,
+        recursiveOption,
+        dryRunOption,
+        inplaceOption);
+
+    return new CommandLineBuilder(rootCommand);
 }
 
 static void Process(
