@@ -63,8 +63,12 @@ static CliConfiguration BuildCommandLine()
 
     rootCommand.SetAction((parseResult, cancellationToken) =>
     {
+        var programLogger = parseResult.GetHost()
+            .Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
+            .CreateLogger("Program");
+
         Process(
-            parseResult.GetHost(),
+            programLogger,
             parseResult.GetValue(sourceArgument)!,
             parseResult.GetValue(moviesOption)!,
             parseResult.GetValue(tvOption)!,
@@ -80,7 +84,7 @@ static CliConfiguration BuildCommandLine()
 }
 
 static void Process(
-    IHost host,
+    Microsoft.Extensions.Logging.ILogger logger,
     DirectoryInfo source,
     DirectoryInfo movies,
     DirectoryInfo tv,
@@ -99,8 +103,6 @@ static void Process(
     movies ??= tv;
 
     // search for all files in the source directory
-    var programLogger = host.Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>().CreateLogger("Program");
-
     foreach (var file in source.EnumerateFiles("*.*", new System.IO.EnumerationOptions { RecurseSubdirectories = recursive, IgnoreInaccessible = true, AttributesToSkip = System.IO.FileAttributes.Hidden }))
     {
         if (file.Length == 0)
@@ -177,23 +179,23 @@ static void Process(
                 }
                 else
                 {
-                    programLogger.LogInformation("Failed to match {File} to either Movie or TV Show", file.Name);
+                    logger.LogInformation("Failed to match {File} to either Movie or TV Show", file.Name);
                 }
             }
             else
             {
-                programLogger.LogDebug("Found non 'Apple' format at {File}", file.Name);
+                logger.LogDebug("Found non 'Apple' format at {File}", file.Name);
             }
 
             tagLibFile.Mode = TagLib.File.AccessMode.Closed;
         }
         catch (UnsupportedFormatException)
         {
-            programLogger.LogDebug("Unsupported file - {File}", file.Name);
+            logger.LogDebug("Unsupported file - {File}", file.Name);
         }
         catch (CorruptFileException)
         {
-            programLogger.LogDebug("Corrupt file - {File}", file.Name);
+            logger.LogDebug("Corrupt file - {File}", file.Name);
         }
         finally
         {
@@ -204,7 +206,7 @@ static void Process(
         {
             if (path.Exists && path.Length == file.Length)
             {
-                programLogger.LogDebug("{Source} has the same length as {Destination}", file.FullName, path.FullName);
+                logger.LogDebug("{Source} has the same length as {Destination}", file.FullName, path.FullName);
                 continue;
             }
 
@@ -217,7 +219,7 @@ static void Process(
             {
                 if (!path.Exists || inplace)
                 {
-                    programLogger.LogInformation("Moving {Source} to {Destination}", file.FullName, path.FullName);
+                    logger.LogInformation("Moving {Source} to {Destination}", file.FullName, path.FullName);
                     if (!dryRun)
                     {
                         file.MoveTo(path.FullName);
@@ -225,7 +227,7 @@ static void Process(
                 }
                 else
                 {
-                    programLogger.LogInformation("Replacing {Destination} with {Source} with a move", path.FullName, file.FullName);
+                    logger.LogInformation("Replacing {Destination} with {Source} with a move", path.FullName, file.FullName);
                     if (!dryRun)
                     {
                         file.CopyTo(path.FullName, true);
@@ -240,11 +242,11 @@ static void Process(
             {
                 if (path.Exists)
                 {
-                    programLogger.LogInformation("Replacing {Destination} with {Source} by a copy", path.FullName, file.FullName);
+                    logger.LogInformation("Replacing {Destination} with {Source} by a copy", path.FullName, file.FullName);
                 }
                 else
                 {
-                    programLogger.LogInformation("Coping {Source} to {Destination}", file.FullName, path.FullName);
+                    logger.LogInformation("Coping {Source} to {Destination}", file.FullName, path.FullName);
                 }
 
                 if (!dryRun)
