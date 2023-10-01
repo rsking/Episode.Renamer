@@ -5,9 +5,7 @@
 //-----------------------------------------------------------------------
 
 using System.CommandLine;
-using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
-using System.CommandLine.Parsing;
 using Episode.Renamer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -39,22 +37,20 @@ return await BuildCommandLine()
         host => host
             .UseSerilog((hostBuilderContext, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration))
             .ConfigureServices(services => services.Configure<InvocationLifetimeOptions>(options => options.SuppressStatusMessages = true)))
-    .UseDefaults()
-    .Build()
     .InvokeAsync(args.Select(arg => System.Environment.ExpandEnvironmentVariables(arg)).ToArray())
     .ConfigureAwait(false);
 
-static CommandLineBuilder BuildCommandLine()
+static CliConfiguration BuildCommandLine()
 {
-    var sourceArgument = new Argument<System.IO.DirectoryInfo>("source");
-    var moviesOption = new Option<System.IO.DirectoryInfo>(new[] { "--movies" }, "The destination folder for movies. If unset, defaults to \"--tv\"").ExistingOnly();
-    var tvOption = new Option<System.IO.DirectoryInfo>(new[] { "--tv" }, "The destination folder for TV shows. If unset, defaults to \"--movies\"").ExistingOnly();
-    var moveOption = new Option<bool>(new[] { "-m", "--move" }, "Moves the files");
-    var recursiveOption = new Option<bool>(new[] { "-r", "--recursive" }, "Recursively searches <SOURCE>");
-    var dryRunOption = new Option<bool>(new[] { "-n", "--dry-run" }, "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command.");
-    var inplaceOption = new Option<bool>(new[] { "-i", "--inplace" }, "Renames the files in place, rather than to <DESTINATION>.");
+    var sourceArgument = new CliArgument<System.IO.DirectoryInfo>("source");
+    var moviesOption = new CliOption<System.IO.DirectoryInfo>("--movies") { Description = "The destination folder for movies. If unset, defaults to \"--tv\"" }.AcceptExistingOnly();
+    var tvOption = new CliOption<System.IO.DirectoryInfo>("--tv") { Description = "The destination folder for TV shows. If unset, defaults to \"--movies\"" }.AcceptExistingOnly();
+    var moveOption = new CliOption<bool>("-m", "--move") { Description = "Moves the files" };
+    var recursiveOption = new CliOption<bool>("-r", "--recursive") { Description = "Recursively searches <SOURCE>" };
+    var dryRunOption = new CliOption<bool>("-n", "--dry-run") { Description = "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command." };
+    var inplaceOption = new CliOption<bool>("-i", "--inplace") { Description = "Renames the files in place, rather than to <DESTINATION>." };
 
-    var rootCommand = new RootCommand
+    var rootCommand = new CliRootCommand
     {
         sourceArgument,
         moviesOption,
@@ -65,18 +61,22 @@ static CommandLineBuilder BuildCommandLine()
         inplaceOption,
     };
 
-    rootCommand.SetHandler(
-        Process,
-        Bind.FromServiceProvider<IHost>(),
-        sourceArgument,
-        moviesOption,
-        tvOption,
-        moveOption,
-        recursiveOption,
-        dryRunOption,
-        inplaceOption);
+    rootCommand.SetAction((parseResult, cancellationToken) =>
+    {
+        Process(
+            parseResult.GetHost(),
+            parseResult.GetValue(sourceArgument)!,
+            parseResult.GetValue(moviesOption)!,
+            parseResult.GetValue(tvOption)!,
+            parseResult.GetValue(moveOption),
+            parseResult.GetValue(recursiveOption),
+            parseResult.GetValue(dryRunOption),
+            parseResult.GetValue(inplaceOption));
 
-    return new CommandLineBuilder(rootCommand);
+        return Task.CompletedTask;
+    });
+
+    return new CliConfiguration(rootCommand);
 }
 
 static void Process(
