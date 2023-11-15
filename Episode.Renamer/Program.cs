@@ -5,10 +5,8 @@
 //-----------------------------------------------------------------------
 
 using System.CommandLine;
-using System.CommandLine.Hosting;
 using Episode.Renamer;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using TagLib;
@@ -32,22 +30,17 @@ static char[] GetInvalidPathChars() => new char[]
 };
 
 return await BuildCommandLine()
-    .UseHost(
-        args => Host.CreateDefaultBuilder(args).UseContentRoot(System.AppDomain.CurrentDomain.BaseDirectory),
-        host => host
-            .UseSerilog((hostBuilderContext, loggerConfiguration) => loggerConfiguration.ReadFrom.Configuration(hostBuilderContext.Configuration))
-            .ConfigureServices(services => services.Configure<InvocationLifetimeOptions>(options => options.SuppressStatusMessages = true)))
-    .InvokeAsync(args.Select(arg => System.Environment.ExpandEnvironmentVariables(arg)).ToArray())
+    .InvokeAsync(args.Select(Environment.ExpandEnvironmentVariables).ToArray())
     .ConfigureAwait(false);
 
 static CliConfiguration BuildCommandLine()
 {
-    var sourceArgument = new CliArgument<System.IO.DirectoryInfo>("source");
-    var moviesOption = new CliOption<System.IO.DirectoryInfo>("--movies") { Description = "The destination folder for movies. If unset, defaults to \"--tv\"" }.AcceptExistingOnly();
-    var tvOption = new CliOption<System.IO.DirectoryInfo>("--tv") { Description = "The destination folder for TV shows. If unset, defaults to \"--movies\"" }.AcceptExistingOnly();
+    var sourceArgument = new CliArgument<DirectoryInfo>("source");
+    var moviesOption = new CliOption<DirectoryInfo>("--movies") { Description = "The destination folder for movies. If unset, defaults to \"--tv\"" }.AcceptExistingOnly();
+    var tvOption = new CliOption<DirectoryInfo>("--tv") { Description = "The destination folder for TV shows. If unset, defaults to \"--movies\"" }.AcceptExistingOnly();
     var moveOption = new CliOption<bool>("-m", "--move") { Description = "Moves the files" };
     var recursiveOption = new CliOption<bool>("-r", "--recursive") { Description = "Recursively searches <SOURCE>" };
-    var dryRunOption = new CliOption<bool>("-n", "--dry-run") { Description = "Don’t actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command." };
+    var dryRunOption = new CliOption<bool>("-n", "--dry-run") { Description = "Don't actually move/copy any file(s). Instead, just show if they exist and would otherwise be moved/copied by the command." };
     var inplaceOption = new CliOption<bool>("-i", "--inplace") { Description = "Renames the files in place, rather than to <DESTINATION>." };
 
     var rootCommand = new CliRootCommand
@@ -61,24 +54,29 @@ static CliConfiguration BuildCommandLine()
         inplaceOption,
     };
 
-    rootCommand.SetAction((parseResult, cancellationToken) =>
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddLogging(builder =>
     {
-        var programLogger = parseResult.GetHost()
-            .Services.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
-            .CreateLogger("Program");
+        var configuration = new LoggerConfiguration();
+        configuration.WriteTo.Console(formatProvider: System.Globalization.CultureInfo.CurrentCulture);
+#if DEBUG
+        configuration.MinimumLevel.Debug();
+#endif
+        builder.AddSerilog(configuration.CreateLogger());
+    });
 
+    var services = serviceCollection.BuildServiceProvider();
+
+    rootCommand.SetAction(parseResult =>
         Process(
-            programLogger,
+            services.GetRequiredService<ILoggerFactory>().CreateLogger("Program"),
             parseResult.GetValue(sourceArgument)!,
             parseResult.GetValue(moviesOption)!,
             parseResult.GetValue(tvOption)!,
             parseResult.GetValue(moveOption),
             parseResult.GetValue(recursiveOption),
             parseResult.GetValue(dryRunOption),
-            parseResult.GetValue(inplaceOption));
-
-        return Task.CompletedTask;
-    });
+            parseResult.GetValue(inplaceOption)));
 
     return new CliConfiguration(rootCommand);
 }
@@ -96,14 +94,14 @@ static void Process(
     var episodeNumberByteVector = (ReadOnlyByteVector)"tves";
     var showNameByteVector = (ReadOnlyByteVector)"tvsh";
     var seasonNumberByteVector = (ReadOnlyByteVector)"tvsn";
-    var workByteVector = new ReadOnlyByteVector(new byte[] { 169, 119, 114, 107 }, 4);
+    var workByteVector = new ReadOnlyByteVector([ 169, 119, 114, 107 ], 4);
     var contentIdByteVector = (ReadOnlyByteVector)"cnID";
 
     tv ??= movies;
     movies ??= tv;
 
     // search for all files in the source directory
-    foreach (var file in source.EnumerateFiles("*.*", new System.IO.EnumerationOptions { RecurseSubdirectories = recursive, IgnoreInaccessible = true, AttributesToSkip = System.IO.FileAttributes.Hidden }))
+    foreach (var file in source.EnumerateFiles("*.*", new EnumerationOptions { RecurseSubdirectories = recursive, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.Hidden }))
     {
         if (file.Length == 0)
         {
@@ -123,14 +121,14 @@ static void Process(
                 {
                     var directory = inplace
                         ? file.GetDirectoryName(GetInvalidPathChars())
-                        : System.IO.Path.Combine(movies.FullName, "Movies").ReplaceAll(GetInvalidPathChars());
+                        : Path.Combine(movies.FullName, "Movies").ReplaceAll(GetInvalidPathChars());
 
                     var fileNameWithoutExtension = $"{appleTag.Title.Sanitise()} ({appleTag.Year})";
                     if (appleTag.TryGetString(workByteVector, out var work))
                     {
                         if (!inplace)
                         {
-                            directory = System.IO.Path.Combine(directory, fileNameWithoutExtension.ReplaceAll(GetInvalidPathChars()));
+                            directory = Path.Combine(directory, fileNameWithoutExtension.ReplaceAll(GetInvalidPathChars()));
                         }
 
                         work = work.Trim();
@@ -142,7 +140,7 @@ static void Process(
                     }
 
                     var fileName = (fileNameWithoutExtension + file.Extension).ReplaceAll(GetInvalidFileNameChars());
-                    path = new FileInfo(System.IO.Path.Combine(directory, fileName));
+                    path = new FileInfo(Path.Combine(directory, fileName));
                 }
                 else if (appleTag.IsTvShow())
                 {
@@ -152,7 +150,7 @@ static void Process(
 
                     var directory = inplace
                         ? file.GetDirectoryName(GetInvalidPathChars())
-                        : System.IO.Path.Combine(tv.FullName, "TV Shows", showName, $"Season {seasonNumber:00}").ReplaceAll(GetInvalidPathChars());
+                        : Path.Combine(tv.FullName, "TV Shows", showName, $"Season {seasonNumber:00}").ReplaceAll(GetInvalidPathChars());
                     var fileNameWithoutExtension = $"{showName} - s{seasonNumber:00}e{episodeNumber:00}";
                     if (appleTag.TryGetUInt32(contentIdByteVector, out var contentId) && contentId != default)
                     {
@@ -175,7 +173,7 @@ static void Process(
                     }
 
                     var fileName = (fileNameWithoutExtension + file.Extension).ReplaceAll(GetInvalidFileNameChars());
-                    path = new FileInfo(System.IO.Path.Combine(directory, fileName));
+                    path = new FileInfo(Path.Combine(directory, fileName));
                 }
                 else
                 {
